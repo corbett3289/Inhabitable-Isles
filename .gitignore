@@ -1,0 +1,30 @@
+# IDE and local build state
+.vs/
+.idea/
+**/bin/
+**/obj/
+*.dll
+*.pdb
+*.log
+*.tmp
+*.user
+*.suo
+
+# Local editor and Workshop state
+EditorModule/
+EditorSessionBackups/
+steam_appid.txt
+steam_workshop_uploader.txt
+SteamWorkshop/WorkshopCreateLocal.xml
+SteamWorkshop/WorkshopUpdateLocal.xml
+SteamWorkshop/WorkshopDescriptionOnlyLocal.xml
+
+# Reports and private game data
+crashreport*/
+crashreports/
+*.dmp
+*.sav
+*.zip
+*.7z
+*.rar
+

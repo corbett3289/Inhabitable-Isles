@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Settlements>
+  <Settlement id="blwii_hideout_01" name="Island Sea Raider Hideout" type="Hideout" posX="322.0" posY="708.0" culture="Culture.sea_raiders">
+    <Components>
+      <Hideout id="blwii_hideout_01" map_icon="bandit_hideout_c" background_crop_position="0.0" background_mesh="empire_twn_scene_bg" wait_mesh="wait_hideout_seaside" gate_rotation="0.0" />
+    </Components>
+    <Locations complex_template="LocationComplexTemplate.hideout_complex">
+      <Location id="hideout_center" scene_name="sea_bandit_a_sv" />
+    </Locations>
+  </Settlement>
+  <Settlement id="blwii_hideout_02" name="Island Sea Raider Hideout" type="Hideout" posX="269.7" posY="241.1" culture="Culture.sea_raiders">
+    <Components>
+      <Hideout id="blwii_hideout_02" map_icon="bandit_hideout_c" background_crop_position="0.0" background_mesh="empire_twn_scene_bg" wait_mesh="wait_hideout_seaside" gate_rotation="0.0" />
+    </Components>
+    <Locations complex_template="LocationComplexTemplate.hideout_complex">
+      <Location id="hideout_center" scene_name="sea_bandit_b_sv" />
+    </Locations>
+  </Settlement>
+  <Settlement id="blwii_hideout_03" name="Island Sea Raider Hideout" type="Hideout" posX="153.5" posY="307.5" culture="Culture.sea_raiders">
+    <Components>
+      <Hideout id="blwii_hideout_03" map_icon="bandit_hideout_c" background_crop_position="0.0" background_mesh="empire_twn_scene_bg" wait_mesh="wait_hideout_seaside" gate_rotation="0.0" />
+    </Components>
+    <Locations complex_template="LocationComplexTemplate.hideout_complex">
+      <Location id="hideout_center" scene_name="sea_bandit_c_sv" />
+    </Locations>
+  </Settlement>
+  <Settlement id="blwii_hideout_04" name="Island Sea Raider Hideout" type="Hideout" posX="215.0" posY="370.5" culture="Culture.sea_raiders">
+    <Components>
+      <Hideout id="blwii_hideout_04" map_icon="bandit_hideout_c" background_crop_position="0.0" background_mesh="empire_twn_scene_bg" wait_mesh="wait_hideout_seaside" gate_rotation="0.0" />
+    </Components>
+    <Locations complex_template="LocationComplexTemplate.hideout_complex">
+      <Location id="hideout_center" scene_name="sea_bandit_d_sv" />
+    </Locations>
+  </Settlement>
+  <Settlement id="blwii_hideout_05" name="Island Sea Raider Hideout" type="Hideout" posX="145.09" posY="353.79" culture="Culture.sea_raiders">
+    <Components>
+      <Hideout id="blwii_hideout_05" map_icon="bandit_hideout_c" background_crop_position="0.0" background_mesh="empire_twn_scene_bg" wait_mesh="wait_hideout_seaside" gate_rotation="0.0" />
+    </Components>
+    <Locations complex_template="LocationComplexTemplate.hideout_complex">
+      <Location id="hideout_center" scene_name="sea_bandit_a_sv" />
+    </Locations>
+  </Settlement>
+  <Settlement id="blwii_hideout_06" name="Island Sea Raider Hideout" type="Hideout" posX="170.99" posY="368.68" culture="Culture.sea_raiders">
+    <Components>
+      <Hideout id="blwii_hideout_06" map_icon="bandit_hideout_c" background_crop_position="0.0" background_mesh="empire_twn_scene_bg" wait_mesh="wait_hideout_seaside" gate_rotation="0.0" />
+    </Components>
+    <Locations complex_template="LocationComplexTemplate.hideout_complex">
+      <Location id="hideout_center" scene_name="sea_bandit_b_sv" />
+    </Locations>
+  </Settlement>
+  <Settlement id="blwii_hideout_07" name="Island Sea Raider Hideout" type="Hideout" posX="179.5" posY="326.0" culture="Culture.sea_raiders">
+    <Components>
+      <Hideout id="blwii_hideout_07" map_icon="bandit_hideout_c" background_crop_position="0.0" background_mesh="empire_twn_scene_bg" wait_mesh="wait_hideout_seaside" gate_rotation="0.0" />
+    </Components>
+    <Locations complex_template="LocationComplexTemplate.hideout_complex">
+      <Location id="hideout_center" scene_name="sea_bandit_c_sv" />
+    </Locations>
+  </Settlement>
+  <Settlement id="blwii_hideout_08" name="Island Sea Raider Hideout" type="Hideout" posX="299.0" posY="258.0" culture="Culture.sea_raiders">
+    <Components>
+      <Hideout id="blwii_hideout_08" map_icon="bandit_hideout_c" background_crop_position="0.0" background_mesh="empire_twn_scene_bg" wait_mesh="wait_hideout_seaside" gate_rotation="0.0" />
+    </Components>
+    <Locations complex_template="LocationComplexTemplate.hideout_complex">
+      <Location id="hideout_center" scene_name="sea_bandit_d_sv" />
+    </Locations>
+  </Settlement>
+</Settlements>

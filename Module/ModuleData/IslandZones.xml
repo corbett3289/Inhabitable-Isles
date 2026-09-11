@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<IslandZones>
+  <!-- War Sails campaign-map coordinates for raised island terrain that vanilla navigation marks as invalid land. -->
+  <Zone name="Western Gulf of Charas Islands" minX="120" maxX="320" minY="265" maxY="415" />
+  <Zone name="Southern Gulf of Charas Islands" minX="235" maxX="380" minY="205" maxY="325" />
+  <Zone name="Biscan Bay Western Islets" minX="110" maxX="280" minY="380" maxY="470" />
+  <Zone name="Northern Ebor Offshore Islands" minX="185" maxX="330" minY="565" maxY="665" />
+  <Zone name="Kachyar Strait Islands" minX="280" maxX="450" minY="610" maxY="735" />
+</IslandZones>

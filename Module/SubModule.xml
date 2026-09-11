@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Module>
+  <Name value="Inhabitable Isles - War Sails &amp; Player Settlement" />
+  <Id value="BLWarsailsInhabitableIslands" />
+  <Version value="v0.9.15" />
+  <SingleplayerModule value="true" />
+  <MultiplayerModule value="false" />
+  <Official value="false" />
+  <DefaultModule value="false" />
+  <ModuleCategory value="Singleplayer" />
+  <ModuleType value="Community" />
+  <DependedModules>
+    <DependedModule Id="Native" DependentVersion="v1.4.8" />
+    <DependedModule Id="SandBoxCore" DependentVersion="v1.4.8" />
+    <DependedModule Id="Sandbox" DependentVersion="v1.4.8" />
+    <DependedModule Id="StoryMode" DependentVersion="v1.4.8" />
+    <DependedModule Id="NavalDLC" DependentVersion="v1.2.8" />
+    <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2" />
+    <DependedModule Id="PlayerSettlement" DependentVersion="v7.5.0" />
+  </DependedModules>
+  <DependedModuleMetadatas>
+    <DependedModuleMetadata id="Native" order="LoadBeforeThis" version="v1.4.8" />
+    <DependedModuleMetadata id="SandBoxCore" order="LoadBeforeThis" version="v1.4.8" />
+    <DependedModuleMetadata id="Sandbox" order="LoadBeforeThis" version="v1.4.8" />
+    <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="v1.4.8" />
+    <DependedModuleMetadata id="NavalDLC" order="LoadBeforeThis" version="v1.2.8" />
+    <DependedModuleMetadata id="Bannerlord.Harmony" order="LoadBeforeThis" version="v2.4.2" />
+    <DependedModuleMetadata id="PlayerSettlement" order="LoadBeforeThis" version="v7.5.0" />
+  </DependedModuleMetadatas>
+  <SubModules>
+    <SubModule>
+      <Name value="BLWarsailsInhabitableIslands" />
+      <DLLName value="BLWarsailsInhabitableIslands.dll" />
+      <SubModuleClassType value="BLWarsailsInhabitableIslands.SubModule" />
+      <Tags />
+    </SubModule>
+  </SubModules>
+  <Xmls>
+    <XmlNode>
+      <XmlName id="Settlements" path="island_hideouts" />
+      <IncludedGameTypes>
+        <GameType value="Campaign" />
+        <GameType value="CampaignStoryMode" />
+      </IncludedGameTypes>
+    </XmlNode>
+  </Xmls>
+</Module>
