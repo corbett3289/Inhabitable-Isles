@@ -2,7 +2,7 @@
 
 Compatibility and campaign expansion mod for Mount & Blade II: Bannerlord War Sails and Player Settlement.
 
-[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102) | [Current source](https://github.com/corbett3289/Inhabitable-Isles) | [Bannerlord 1.4.8 source](https://github.com/corbett3289/Inhabitable-Isles/tree/bannerlord-1.4.8)
+[Current Steam Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102) | [Deprecated 1.4.8 Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3799429144) | [Source](https://github.com/corbett3289/Inhabitable-Isles) | [Bannerlord 1.4.8 source](https://github.com/corbett3289/Inhabitable-Isles/tree/bannerlord-1.4.8)
 
 Current release candidate: v0.9.23 for Bannerlord v1.5.2 and War Sails v1.3.2. The launcher compatibility version intentionally remains v0.9.15 so existing saves do not enter Bannerlord's unreliable module-version mismatch flow.
 
@@ -47,13 +47,13 @@ This is a separate module and does not edit Player Settlement's files.
 ## Version branches
 
 - `main` is the active v0.9.23 line for Bannerlord 1.5.2 and War Sails 1.3.2.
-- `bannerlord-1.4.8` preserves the historical v0.9.21 source for Bannerlord 1.4.8 and War Sails 1.2.8. It is retained for players and mod authors who need the older API target, but it is not the currently supported release.
+- `bannerlord-1.4.8` preserves the historical v0.9.21 source for Bannerlord 1.4.8 and War Sails 1.2.8. Its [standalone Workshop package](https://steamcommunity.com/sharedfiles/filedetails/?id=3799429144) is deprecated, frozen, and unsupported.
 
 The module manifest intentionally remains at launcher version v0.9.15 for save compatibility. The current DLL file and informational versions are v0.9.23; the assembly identity remains v0.9.21.0.
 
 ## Installation
 
-The supported player installation is the [Steam Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102). Enable War Sails, Harmony, Player Settlement, and then Inhabitable Isles in that order. Back up an existing save before changing game, DLC, or mod versions.
+The supported player installation is the [current Steam Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102). Enable War Sails, Harmony, Player Settlement, and then Inhabitable Isles in that order. Back up an existing save before changing game, DLC, or mod versions. Do not subscribe to or enable both the current and legacy Workshop items; they use the same module identity and target different game APIs.
 
 This repository contains source and module data. Generated DLL and PDB files are deliberately not committed.
 
