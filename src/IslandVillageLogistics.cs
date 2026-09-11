@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
 using TaleWorlds.CampaignSystem.Naval;
@@ -16,6 +18,75 @@ namespace BLWarsailsInhabitableIslands
         private const int FerryCrewCapacity = 35;
         private const int MaximumEmergencyFerries = 12;
         private const float HomeReplacementDistance = 1.5f;
+        private static Dictionary<string, int> _temporaryFerryCounts =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+        private static readonly HashSet<string> LoggedFleetPolicyBlocks =
+            new HashSet<string>(StringComparer.Ordinal);
+        private static readonly OptionalBooleanPropertyAccessor FleetPolicyAccessor =
+            new OptionalBooleanPropertyAccessor(typeof(Hero), "CanHaveFleet");
+        private static bool _loggedFleetPolicyFailure;
+
+        internal static void AttachTemporaryFerryLedger(
+            Dictionary<string, int> temporaryFerryCounts)
+        {
+            _temporaryFerryCounts = temporaryFerryCounts ??
+                new Dictionary<string, int>(StringComparer.Ordinal);
+        }
+
+        internal static int GetTrackedFerryCount()
+        {
+            return _temporaryFerryCounts?.Values.Sum() ?? 0;
+        }
+
+        internal static string GetTemporaryFerryStatus()
+        {
+            int partyCount = _temporaryFerryCounts?.Count ?? 0;
+            return "Inhabitable Isles tracks " + GetTrackedFerryCount() +
+                   " temporary ferry ship(s) across " + partyCount +
+                   " party record(s).";
+        }
+
+        internal static string GetFleetPolicyStatus()
+        {
+            return "Hero.CanHaveFleet " + FleetPolicyAccessor.Availability;
+        }
+
+        internal static void ReconcileTemporaryFerries()
+        {
+            if (_temporaryFerryCounts == null ||
+                _temporaryFerryCounts.Count == 0 ||
+                Campaign.Current == null)
+            {
+                return;
+            }
+
+            Dictionary<string, MobileParty> parties = MobileParty.All
+                .Where(party => party?.StringId != null)
+                .GroupBy(party => party.StringId)
+                .ToDictionary(group => group.Key, group => group.First());
+            foreach (string partyId in _temporaryFerryCounts.Keys.ToList())
+            {
+                if (!parties.TryGetValue(partyId, out MobileParty party) ||
+                    party == null ||
+                    !party.IsActive)
+                {
+                    _temporaryFerryCounts.Remove(partyId);
+                    continue;
+                }
+
+                int ownedTemporaryCandidates = party.Ships.Count(IsTemporaryFerryCandidate);
+                int tracked = Math.Max(0, _temporaryFerryCounts[partyId]);
+                int reconciled = Math.Min(tracked, ownedTemporaryCandidates);
+                if (reconciled == 0)
+                {
+                    _temporaryFerryCounts.Remove(partyId);
+                }
+                else
+                {
+                    _temporaryFerryCounts[partyId] = reconciled;
+                }
+            }
+        }
 
         internal static void RepairTradeBounds()
         {
@@ -86,6 +157,32 @@ namespace BLWarsailsInhabitableIslands
                 return true;
             }
 
+            Hero leader = party.LeaderHero;
+            bool canHaveFleet = true;
+            if (leader != null &&
+                !FleetPolicyAccessor.TryGetValue(
+                    leader,
+                    out canHaveFleet,
+                    out string fleetPolicyFailure))
+            {
+                LogFleetPolicyFailure(fleetPolicyFailure, party, reason);
+                return false;
+            }
+
+            if (leader != null && !canHaveFleet)
+            {
+                string partyId = party.StringId ?? "<unnamed party>";
+                if (LoggedFleetPolicyBlocks.Add(partyId))
+                {
+                    Debug.Print(
+                        "[BLWarsailsInhabitableIslands] Did not issue an " +
+                        "emergency island ferry to " + partyId + " for " +
+                        reason + " because its native clan fleet toggle is off.");
+                }
+
+                return false;
+            }
+
             ShipHull hull = MBObjectManager.Instance.GetObject<ShipHull>(FerryHullId);
             if (hull == null)
             {
@@ -127,6 +224,7 @@ namespace BLWarsailsInhabitableIslands
 
             if (added > 0)
             {
+                TrackTemporaryFerries(party, added);
                 Debug.Print(
                     "[BLWarsailsInhabitableIslands] Issued " +
                     added + " emergency island ferry ship(s) to " +
@@ -134,6 +232,105 @@ namespace BLWarsailsInhabitableIslands
             }
 
             return party.HasNavalNavigationCapability;
+        }
+
+        private static void LogFleetPolicyFailure(
+            string failureReason,
+            MobileParty party,
+            string ferryReason)
+        {
+            if (_loggedFleetPolicyFailure)
+            {
+                return;
+            }
+
+            _loggedFleetPolicyFailure = true;
+            Debug.Print(
+                "[BLWarsailsInhabitableIslands] Could not read the native " +
+                "fleet policy, so no emergency ferry was issued to " +
+                (party?.StringId ?? "<unnamed party>") + " for " +
+                ferryReason + ": " + failureReason);
+        }
+
+        internal static void RetireTemporaryFerriesIfSafe(MobileParty party)
+        {
+            string partyId = party?.StringId;
+            if (partyId == null ||
+                _temporaryFerryCounts == null ||
+                !_temporaryFerryCounts.TryGetValue(partyId, out int tracked))
+            {
+                return;
+            }
+
+            if (!party.IsActive)
+            {
+                _temporaryFerryCounts.Remove(partyId);
+                return;
+            }
+
+            if (party.IsCurrentlyAtSea ||
+                party.IsTransitionInProgress ||
+                party.MapEvent != null ||
+                IslandTravelController.IsManagedParty(party))
+            {
+                return;
+            }
+
+            List<Ship> candidates = party.Ships
+                .Where(IsTemporaryFerryCandidate)
+                .Take(Math.Max(0, tracked))
+                .ToList();
+            int removed = 0;
+            foreach (Ship ferry in candidates)
+            {
+                try
+                {
+                    DestroyShipAction.ApplyByDiscard(ferry);
+                    removed++;
+                }
+                catch (Exception ex)
+                {
+                    Debug.Print(
+                        "[BLWarsailsInhabitableIslands] Could not retire a " +
+                        "temporary ferry from " + partyId + ": " + ex);
+                    break;
+                }
+            }
+
+            int remaining = Math.Max(0, tracked - removed);
+            if (remaining == 0)
+            {
+                _temporaryFerryCounts.Remove(partyId);
+            }
+            else
+            {
+                _temporaryFerryCounts[partyId] = remaining;
+            }
+
+            if (removed > 0)
+            {
+                Debug.Print(
+                    "[BLWarsailsInhabitableIslands] Retired " + removed +
+                    " temporary ferry ship(s) from " + partyId + ".");
+            }
+        }
+
+        private static void TrackTemporaryFerries(MobileParty party, int added)
+        {
+            if (party?.StringId == null || added <= 0)
+            {
+                return;
+            }
+
+            _temporaryFerryCounts.TryGetValue(party.StringId, out int existing);
+            _temporaryFerryCounts[party.StringId] = existing + added;
+        }
+
+        private static bool IsTemporaryFerryCandidate(Ship ship)
+        {
+            return ship != null &&
+                   !ship.IsTradeable &&
+                   ship.ShipHull?.StringId == FerryHullId;
         }
 
         private static Settlement SelectTradeBound(

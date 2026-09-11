@@ -1394,6 +1394,11 @@ namespace BLWarsailsInhabitableIslands
             ref MobileParty.NavigationType navigationType,
             ref bool isTargetingThePort)
         {
+            if (__instance == null || settlement == null)
+            {
+                return true;
+            }
+
             if (settlement != null &&
                 settlement.HasPort &&
                 IslandSettlementIntegration.IsIslandSettlement(
@@ -1439,6 +1444,11 @@ namespace BLWarsailsInhabitableIslands
             MobileParty.NavigationType navigationType,
             bool isTargetingPort)
         {
+            if (__instance == null || settlement == null)
+            {
+                return true;
+            }
+
             CampaignVec2 target =
                 isTargetingPort ? settlement.PortPosition : settlement.GatePosition;
             return !IslandTravelController.TryHandleMove(
@@ -1461,6 +1471,11 @@ namespace BLWarsailsInhabitableIslands
             Settlement settlement,
             MobileParty.NavigationType navigationType)
         {
+            if (__instance == null || settlement == null)
+            {
+                return true;
+            }
+
             return !IslandTravelController.TryHandleMove(
                 __instance,
                 settlement.GatePosition,
@@ -1480,6 +1495,11 @@ namespace BLWarsailsInhabitableIslands
             bool isTargetingPort,
             MobileParty.NavigationType navigationType)
         {
+            if (__instance == null || settlement == null)
+            {
+                return true;
+            }
+
             CampaignVec2 target =
                 isTargetingPort ? settlement.PortPosition : settlement.GatePosition;
             return !IslandTravelController.TryHandleMove(
@@ -1502,6 +1522,11 @@ namespace BLWarsailsInhabitableIslands
             MobileParty party,
             MobileParty.NavigationType navigationType)
         {
+            if (__instance == null || party == null || !party.IsActive)
+            {
+                return true;
+            }
+
             return !IslandTravelController.TryHandleMove(
                 __instance,
                 party.Position,
@@ -1522,6 +1547,13 @@ namespace BLWarsailsInhabitableIslands
             MobileParty.NavigationType navigationType,
             bool isTargetingPort)
         {
+            if (__instance == null ||
+                mobileParty == null ||
+                !mobileParty.IsActive)
+            {
+                return true;
+            }
+
             return !IslandTravelController.TryHandleMove(
                 __instance,
                 mobileParty.Position,

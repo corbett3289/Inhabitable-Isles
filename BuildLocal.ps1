@@ -1,16 +1,49 @@
 param(
-    [switch]$Deploy
+    [string]$GameRoot = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord",
+    [string]$PlayerSettlementRoot = "C:\Program Files (x86)\Steam\steamapps\workshop\content\261550\3720376888",
+    [string]$ExpectedBannerlordVersion = "1.5.2",
+    [string]$ExpectedWarSailsVersion = "1.3.2",
+    [string]$ExpectedPlayerSettlementVersion = "7.5.0",
+    [switch]$AllowVersionMismatch,
+    [switch]$Deploy,
+    [string]$DeployRoot
 )
 
 $ErrorActionPreference = "Stop"
 
 $repo = Split-Path -Parent $MyInvocation.MyCommand.Path
-$game = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord"
+$game = $GameRoot
 $framework = "C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.7.1"
 $csc = "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\Roslyn\csc.exe"
 $moduleId = "BLWarsailsInhabitableIslands"
 $output = Join-Path $repo "Module\bin\Win64_Shipping_Client\$moduleId.dll"
-$deployModule = "C:\Program Files (x86)\Steam\steamapps\workshop\content\261550\3767263102"
+
+function Get-ModuleVersion($moduleRoot) {
+    $subModulePath = Join-Path $moduleRoot "SubModule.xml"
+    if (-not (Test-Path -LiteralPath $subModulePath)) {
+        throw "Missing module manifest: $subModulePath"
+    }
+
+    [xml]$manifest = Get-Content -LiteralPath $subModulePath -Raw
+    $versionNode = $manifest.SelectSingleNode("/Module/Version")
+    if ($null -eq $versionNode) {
+        throw "No module version found in $subModulePath"
+    }
+
+    return $versionNode.GetAttribute("value").TrimStart("v")
+}
+
+function Assert-ModuleVersion($name, $moduleRoot, $expectedVersion) {
+    $actualVersion = Get-ModuleVersion $moduleRoot
+    if ($actualVersion -ne $expectedVersion) {
+        $message = "$name version mismatch: expected $expectedVersion, found $actualVersion at $moduleRoot"
+        if ($AllowVersionMismatch) {
+            Write-Warning $message
+        } else {
+            throw $message
+        }
+    }
+}
 
 function Add-ManagedDlls($dir, $pattern = "*.dll") {
     if (Test-Path -LiteralPath $dir) {
@@ -25,6 +58,10 @@ function Add-ManagedDlls($dir, $pattern = "*.dll") {
 }
 
 New-Item -ItemType Directory -Force -Path (Split-Path $output) | Out-Null
+
+Assert-ModuleVersion "Bannerlord" (Join-Path $game "Modules\Native") $ExpectedBannerlordVersion
+Assert-ModuleVersion "War Sails" (Join-Path $game "Modules\NavalDLC") $ExpectedWarSailsVersion
+Assert-ModuleVersion "Player Settlement" $PlayerSettlementRoot $ExpectedPlayerSettlementVersion
 
 $refFiles = @()
 $refFiles += Add-ManagedDlls $framework
@@ -42,7 +79,7 @@ foreach ($module in @("Native", "SandBox", "SandBoxCore", "StoryMode", "CustomBa
     }
 }
 
-$playerSettlementBin = "C:\Program Files (x86)\Steam\steamapps\workshop\content\261550\3720376888\bin\Win64_Shipping_Client"
+$playerSettlementBin = Join-Path $PlayerSettlementRoot "bin\Win64_Shipping_Client"
 $refFiles += Join-Path $playerSettlementBin "PlayerSettlement.dll"
 $refFiles += Join-Path $playerSettlementBin "PlayerSettlementFixes.dll"
 
@@ -80,6 +117,11 @@ try {
 }
 
 if ($Deploy) {
+    if ([string]::IsNullOrWhiteSpace($DeployRoot)) {
+        throw "-Deploy requires an explicit -DeployRoot. No Workshop destination is selected automatically."
+    }
+
+    $deployModule = [IO.Path]::GetFullPath($DeployRoot)
     New-Item -ItemType Directory -Force -Path $deployModule | Out-Null
     New-Item -ItemType Directory -Force -Path (Join-Path $deployModule "bin\Win64_Shipping_Client") | Out-Null
     Copy-Item -LiteralPath (Join-Path $repo "Module\SubModule.xml") -Destination (Join-Path $deployModule "SubModule.xml") -Force

@@ -38,6 +38,7 @@ namespace BLWarsailsInhabitableIslands
         private const int MinimumComponentSamples = 4;
         private const int MaximumComponentSamples = 12000;
         private const int MaximumSurfaces = 128;
+        private const int StableImportedSurfaceBaseline = 22;
 
         private const float PrefabMinX = -3.349699f;
         private const float PrefabMaxX = 2.904692f;
@@ -181,6 +182,18 @@ namespace BLWarsailsInhabitableIslands
                 faceCountBefore,
                 scene.GetNavMeshFaceCount(),
                 existingSurfaceTerrainFaces));
+
+            if (importedSurfaces.Count != StableImportedSurfaceBaseline)
+            {
+                Debug.Print(string.Format(
+                    CultureInfo.InvariantCulture,
+                    "[BLWarsailsInhabitableIslands] Compatibility warning: " +
+                    "the current map imported {0} island surfaces; the " +
+                    "v1.4.8 baseline is {1}. Review blwii.compat and the " +
+                    "per-surface navigation diagnostics before release.",
+                    importedSurfaces.Count,
+                    StableImportedSurfaceBaseline));
+            }
         }
 
         private static bool TryFindShorelineNavalPosition(

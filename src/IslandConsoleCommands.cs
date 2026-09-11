@@ -73,5 +73,22 @@ namespace BLWarsailsInhabitableIslands
         {
             return IslandCompatibility.GetStatus();
         }
+
+        [CommandLineFunctionality.CommandLineArgumentFunction("ferries", "blwii")]
+        public static string Ferries(List<string> arguments)
+        {
+            return IslandVillageLogistics.GetTemporaryFerryStatus();
+        }
+
+        [CommandLineFunctionality.CommandLineArgumentFunction("hideouts", "blwii")]
+        public static string Hideouts(List<string> arguments)
+        {
+            string option = arguments != null && arguments.Count > 0
+                ? arguments[0].Trim().ToLowerInvariant()
+                : "audit";
+            return option == "audit" || option == "status"
+                ? IslandFeatureBehavior.GetHideoutAudit()
+                : "Usage: blwii.hideouts audit";
+        }
     }
 }

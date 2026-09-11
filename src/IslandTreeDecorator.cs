@@ -10,6 +10,9 @@ namespace BLWarsailsInhabitableIslands
 {
     internal static class IslandTreeDecorator
     {
+        private const float MinimumTreeBoundsDimension = 0.01f;
+        private const float MaximumTreeBoundsDimension = 8f;
+
         private static readonly TreeResource[] TemperateTreeResources =
         {
             new TreeResource("worldmap_tree_acacia_01", 0.21f, 0.29f),
@@ -28,6 +31,8 @@ namespace BLWarsailsInhabitableIslands
             new Dictionary<string, MetaMesh>(StringComparer.Ordinal);
         private static readonly HashSet<string> FailedResources =
             new HashSet<string>(StringComparer.Ordinal);
+        private static readonly HashSet<string> InvalidBoundsResources =
+            new HashSet<string>(StringComparer.Ordinal);
         private static Scene _scene;
         private static bool _enabled = true;
 
@@ -45,6 +50,7 @@ namespace BLWarsailsInhabitableIslands
             Instances.Clear();
             ResourceCache.Clear();
             FailedResources.Clear();
+            InvalidBoundsResources.Clear();
             if (!_enabled)
             {
                 return;
@@ -211,6 +217,12 @@ namespace BLWarsailsInhabitableIslands
                         entity.SetFrame(ref frame, true);
                         entity.RecomputeBoundingBox();
                         entity.UpdateGlobalBounds();
+                        if (!HasValidBounds(entity, treeResource.Name))
+                        {
+                            entity.Remove(0);
+                            continue;
+                        }
+
                         entity.UpdateVisibilityMask();
                         Instances.Add(
                             new TreeInstance(entity, island.Id, position));
@@ -223,6 +235,49 @@ namespace BLWarsailsInhabitableIslands
                         treeResource.Name + ": " + ex.Message);
                 }
             }
+        }
+
+        private static bool HasValidBounds(
+            GameEntity entity,
+            string resourceName)
+        {
+            BoundingBox bounds = entity.GetGlobalBoundingBox();
+            Vec3 size = bounds.max - bounds.min;
+            float largestDimension = Math.Max(
+                Math.Abs(size.x),
+                Math.Max(Math.Abs(size.y), Math.Abs(size.z)));
+            bool valid =
+                IsFinite(size.x) &&
+                IsFinite(size.y) &&
+                IsFinite(size.z) &&
+                largestDimension >= MinimumTreeBoundsDimension &&
+                largestDimension <= MaximumTreeBoundsDimension;
+            if (valid)
+            {
+                return true;
+            }
+
+            FailedResources.Add(resourceName);
+            if (InvalidBoundsResources.Add(resourceName))
+            {
+                Debug.Print(string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "[BLWarsailsInhabitableIslands] Disabled tree resource " +
+                    "{0} for this map session because its placed bounds " +
+                    "were invalid or oversized ({1:0.###} x {2:0.###} x " +
+                    "{3:0.###}).",
+                    resourceName,
+                    size.x,
+                    size.y,
+                    size.z));
+            }
+
+            return false;
+        }
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
         }
 
         private static GameEntity CreateTreeEntity(

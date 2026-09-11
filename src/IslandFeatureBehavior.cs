@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using HarmonyLib;
 using Helpers;
 using TaleWorlds.CampaignSystem;
@@ -58,8 +59,10 @@ namespace BLWarsailsInhabitableIslands
             new Dictionary<string, int>();
         private Dictionary<string, CampaignTime> _reactivationTimes =
             new Dictionary<string, CampaignTime>();
+        private Dictionary<string, int> _temporaryFerryCounts =
+            new Dictionary<string, int>();
         private bool _piratesEnabled = true;
-        private int _schemaVersion = 2;
+        private int _schemaVersion = 3;
         private bool _initialized;
 
         internal static bool IsManagedParty(MobileParty party)
@@ -162,6 +165,50 @@ namespace BLWarsailsInhabitableIslands
                 : "Inhabitable Isles pirates disabled for this save. Managed hideouts and parties were removed.";
         }
 
+        internal static string GetHideoutAudit()
+        {
+            if (Campaign.Current == null || _instance == null)
+            {
+                return "Load a campaign before auditing Inhabitable Isles hideouts.";
+            }
+
+            StringBuilder result = new StringBuilder(
+                "Inhabitable Isles hideout audit:");
+            foreach (string id in CandidatePriority)
+            {
+                Settlement settlement = Settlement.Find(id);
+                Hideout hideout = settlement?.Hideout;
+                bool positionValid =
+                    settlement != null &&
+                    IsUsableHideoutPosition(settlement.Position);
+                bool gateValid =
+                    settlement != null &&
+                    IsUsableHideoutPosition(settlement.GatePosition);
+                int partyCount = settlement?.Parties?.Count ?? 0;
+                result.Append("\n");
+                result.Append(id);
+                result.Append(": state=");
+                result.Append(_instance.GetState(id));
+                result.Append(", active=");
+                result.Append(settlement?.IsActive == true);
+                result.Append(", visible=");
+                result.Append(settlement?.IsVisible == true);
+                result.Append(", infested=");
+                result.Append(hideout?.IsInfested == true);
+                result.Append(", spotted=");
+                result.Append(hideout?.IsSpotted == true);
+                result.Append(", position=");
+                result.Append(positionValid ? "valid" : "invalid");
+                result.Append(", gate=");
+                result.Append(gateValid ? "valid" : "invalid");
+                result.Append(", parties=");
+                result.Append(partyCount);
+                result.Append(".");
+            }
+
+            return result.ToString();
+        }
+
         public IslandFeatureBehavior()
         {
             _instance = this;
@@ -204,19 +251,29 @@ namespace BLWarsailsInhabitableIslands
             dataStore.SyncData(
                 "blwii_feature_schema",
                 ref _schemaVersion);
+            dataStore.SyncData(
+                "blwii_temporary_ferry_counts_v1",
+                ref _temporaryFerryCounts);
 
             _hideoutStates ??= new Dictionary<string, int>();
             _reactivationTimes ??= new Dictionary<string, CampaignTime>();
-            if (_schemaVersion < 2)
+            _temporaryFerryCounts ??= new Dictionary<string, int>();
+            if (_schemaVersion < 3)
             {
-                _schemaVersion = 2;
+                _schemaVersion = 3;
             }
+
+            IslandVillageLogistics.AttachTemporaryFerryLedger(
+                _temporaryFerryCounts);
         }
 
         private void OnCampaignReady(CampaignGameStarter starter)
         {
             LoggedNavigationRepairs.Clear();
             _initialized = false;
+            IslandVillageLogistics.AttachTemporaryFerryLedger(
+                _temporaryFerryCounts);
+            IslandVillageLogistics.ReconcileTemporaryFerries();
             TryInitialize();
         }
 
@@ -243,6 +300,7 @@ namespace BLWarsailsInhabitableIslands
 
         private void HourlyTickParty(MobileParty party)
         {
+            IslandVillageLogistics.RetireTemporaryFerriesIfSafe(party);
             IslandVillageLogistics.PrepareVillagerFerry(party);
             if (!IslandTravelController.TryReleaseStuckIslandVisitor(party))
             {
@@ -663,6 +721,7 @@ namespace BLWarsailsInhabitableIslands
                 Settlement settlement = Settlement.Find(id);
                 if (settlement == null ||
                     GetState(id) != HideoutState.Dormant ||
+                    !IsCandidateNavigationValid(settlement) ||
                     HasPlayerSettlementOnSameIsland(settlement))
                 {
                     continue;
@@ -676,6 +735,7 @@ namespace BLWarsailsInhabitableIslands
         private void EnablePirates()
         {
             UpdateHideoutStates();
+            DeactivateInvalidHideouts();
             foreach (string id in CandidatePriority)
             {
                 ApplyCandidateActivation(id, GetState(id));
@@ -706,6 +766,7 @@ namespace BLWarsailsInhabitableIslands
         {
             Settlement settlement = Settlement.Find(hideoutId);
             if (settlement?.Hideout == null ||
+                !IsCandidateNavigationValid(settlement) ||
                 !IslandNavMeshOverlay.TryGetIsland(
                     settlement.Position,
                     out IslandRecord island))
@@ -766,6 +827,39 @@ namespace BLWarsailsInhabitableIslands
             }
 
             settlement.IsVisible = settlement.Hideout.IsSpotted;
+        }
+
+        private void DeactivateInvalidHideouts()
+        {
+            foreach (string id in CandidatePriority)
+            {
+                HideoutState state = GetState(id);
+                if (state != HideoutState.Active &&
+                    state != HideoutState.Grace)
+                {
+                    continue;
+                }
+
+                Settlement settlement = Settlement.Find(id);
+                if (IsCandidateNavigationValid(settlement))
+                {
+                    continue;
+                }
+
+                _hideoutStates[id] = (int)HideoutState.Dormant;
+                ApplyCandidateActivation(id, HideoutState.Dormant);
+                RemoveIslandHideoutParties(id);
+                Debug.Print(
+                    "[BLWarsailsInhabitableIslands] Deactivated unreachable " +
+                    "island hideout " + id + ".");
+            }
+        }
+
+        private static bool IsCandidateNavigationValid(Settlement settlement)
+        {
+            return settlement?.Hideout != null &&
+                   IsUsableHideoutPosition(settlement.Position) &&
+                   IsUsableHideoutPosition(settlement.GatePosition);
         }
 
         private static MobileParty CreateManagedParty(

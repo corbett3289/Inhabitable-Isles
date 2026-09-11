@@ -20,6 +20,7 @@ namespace BLWarsailsInhabitableIslands
 
             try
             {
+                IslandCompatibility.RefreshRuntimeVersions();
                 _harmony = new Harmony(HarmonyId);
                 ApplyHarmonyPatches(typeof(SubModule).Assembly);
             }
@@ -57,6 +58,7 @@ namespace BLWarsailsInhabitableIslands
 
             if (gameStarterObject is CampaignGameStarter campaignStarter)
             {
+                IslandCompatibility.WarnIfRuntimeUnsupported();
                 campaignStarter.AddBehavior(new IslandFeatureBehavior());
             }
         }
@@ -75,6 +77,16 @@ namespace BLWarsailsInhabitableIslands
             IslandCompatibility.BeginPatchRegistration(patchTypes.Length);
             foreach (Type patchType in patchTypes)
             {
+                if (!IslandCompatibility.ShouldApplyPatch(
+                        patchType,
+                        out string skipReason))
+                {
+                    IslandCompatibility.RecordPatchSkipped(
+                        patchType,
+                        skipReason);
+                    continue;
+                }
+
                 try
                 {
                     _harmony.CreateClassProcessor(patchType).Patch();
