@@ -2,6 +2,11 @@
 
 Compatibility and campaign expansion mod for Mount & Blade II: Bannerlord War Sails and Player Settlement.
 
+> [!WARNING]
+> This branch is a frozen, deprecated, and unsupported source snapshot for Bannerlord 1.4.8 and War Sails 1.2.8. Current development and support are on [`main`](https://github.com/corbett3289/Inhabitable-Isles).
+
+[Deprecated 1.4.8 Workshop package](https://steamcommunity.com/sharedfiles/filedetails/?id=3799429144) | [Current Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102)
+
 Current Workshop candidate: v0.9.21 for Bannerlord v1.4.8 and War Sails v1.2.8. The launcher compatibility version intentionally remains v0.9.15 so existing saves do not enter Bannerlord's unreliable module-version mismatch flow.
 
 v0.9.21 recompiles the mod against the current game and War Sails assemblies and isolates Harmony patch registration so one changed optional callback cannot prevent the rest of the mod from loading. Internal embarkation remains preferred, with validated public sailing and disembarkation fallbacks plus a bounded transition watchdog. Imported terrain handling now activates only after island navmesh registration succeeds, and generated tree resources are resolved once per map session. Use `blwii.compat` to report patch status, transition support, imported island surfaces, and active tree state.
