@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Module>
-  <Name value="Inhabitable Isles - War Sails &amp; Player Settlement" />
+  <Name value="Inhabitable Isles - Legacy 1.4.8 (Deprecated)" />
   <Id value="BLWarsailsInhabitableIslands" />
   <Version value="v0.9.15" />
   <SingleplayerModule value="true" />
@@ -15,7 +15,7 @@
     <DependedModule Id="Sandbox" DependentVersion="v1.4.8" />
     <DependedModule Id="StoryMode" DependentVersion="v1.4.8" />
     <DependedModule Id="NavalDLC" DependentVersion="v1.2.8" />
-    <DependedModule Id="Bannerlord.Harmony" DependentVersion="v2.4.2" />
+    <DependedModule Id="Bannerlord.Harmony" />
     <DependedModule Id="PlayerSettlement" DependentVersion="v7.5.0" />
   </DependedModules>
   <DependedModuleMetadatas>
@@ -24,7 +24,7 @@
     <DependedModuleMetadata id="Sandbox" order="LoadBeforeThis" version="v1.4.8" />
     <DependedModuleMetadata id="StoryMode" order="LoadBeforeThis" version="v1.4.8" />
     <DependedModuleMetadata id="NavalDLC" order="LoadBeforeThis" version="v1.2.8" />
-    <DependedModuleMetadata id="Bannerlord.Harmony" order="LoadBeforeThis" version="v2.4.2" />
+    <DependedModuleMetadata id="Bannerlord.Harmony" order="LoadBeforeThis" />
     <DependedModuleMetadata id="PlayerSettlement" order="LoadBeforeThis" version="v7.5.0" />
   </DependedModuleMetadatas>
   <SubModules>

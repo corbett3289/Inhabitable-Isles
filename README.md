@@ -9,6 +9,16 @@ Compatibility and campaign expansion mod for Mount & Blade II: Bannerlord War Sa
 
 Current Workshop candidate: v0.9.21 for Bannerlord v1.4.8 and War Sails v1.2.8. The launcher compatibility version intentionally remains v0.9.15 so existing saves do not enter Bannerlord's unreliable module-version mismatch flow.
 
+## Harmony dependency maintenance (2026-11-01)
+
+The legacy module now requires Harmony by module identity and load order without pinning its launcher version to `v2.4.2`. Bannerlord.Harmony includes a distribution build number in its module version: the current release is `v2.4.2.248`, while its `0Harmony.dll` assembly remains `2.4.2.0`. Both native and community dependency declarations accept those distribution build updates.
+
+This is a manifest-only maintenance exception for the deprecated release. The source manifest's display name now matches the existing legacy Workshop package. The v0.9.21 gameplay DLL, Bannerlord 1.4.8 / War Sails 1.2.8 targets, module identity, launcher version, and save data remain unchanged. It does not establish the cause of an individual crash or add support for newer game versions. Install one compatible Harmony distribution and keep it before Player Settlement and Inhabitable Isles; do not bundle another `0Harmony.dll` with Isles.
+
+The original `BuildLocal.ps1` is historical and must not be used against a newer game installation or deployed to its hardcoded destination. This manifest-only update reuses the existing verified 1.4.8 binary rather than recompiling against another game version.
+
+## Preserved gameplay release
+
 v0.9.21 recompiles the mod against the current game and War Sails assemblies and isolates Harmony patch registration so one changed optional callback cannot prevent the rest of the mod from loading. Internal embarkation remains preferred, with validated public sailing and disembarkation fallbacks plus a bounded transition watchdog. Imported terrain handling now activates only after island navmesh registration succeeds, and generated tree resources are resolved once per map session. Use `blwii.compat` to report patch status, transition support, imported island surfaces, and active tree state.
 
 Bannerlord v1.4.8 significantly improves authored Settlement Distance Cache generation and error reporting. Inhabitable Isles intentionally retains its runtime navigation and settlement integration because its island surfaces, Player Settlement holdings, ports, and parties are created or repaired after the authored `Main_map` cache has loaded.
