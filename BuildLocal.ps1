@@ -1,9 +1,10 @@
 param(
     [string]$GameRoot = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord",
     [string]$PlayerSettlementRoot = "C:\Program Files (x86)\Steam\steamapps\workshop\content\261550\3720376888",
-    [string]$ExpectedBannerlordVersion = "1.5.2",
-    [string]$ExpectedWarSailsVersion = "1.3.2",
+    [string]$ExpectedBannerlordVersion = "1.5.6",
+    [string]$ExpectedWarSailsVersion = "1.3.6",
     [string]$ExpectedPlayerSettlementVersion = "7.5.0",
+    [string]$HarmonyRoot = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Modules\Bannerlord.Harmony",
     [switch]$AllowVersionMismatch,
     [switch]$Deploy,
     [string]$DeployRoot
@@ -71,12 +72,20 @@ $gameBin = Join-Path $game "bin\Win64_Shipping_Client"
 $refFiles += Add-ManagedDlls $gameBin "TaleWorlds*.dll" | Where-Object { [IO.Path]::GetFileName($_) -ne "TaleWorlds.Native.dll" }
 $refFiles += Join-Path $gameBin "Newtonsoft.Json.dll"
 
-foreach ($module in @("Native", "SandBox", "SandBoxCore", "StoryMode", "CustomBattle", "BirthAndDeath", "NavalDLC", "Bannerlord.Harmony")) {
+foreach ($module in @("Native", "SandBox", "SandBoxCore", "StoryMode", "CustomBattle", "BirthAndDeath", "NavalDLC")) {
     $dir = Join-Path $game "Modules\$module\bin\Win64_Shipping_Client"
     $refFiles += Add-ManagedDlls $dir | Where-Object {
         [IO.Path]::GetFileName($_) -notmatch "^(System|Microsoft)\." -and
         [IO.Path]::GetFileName($_) -ne "TaleWorlds.Native.dll"
     }
+}
+
+$harmonyBin = Join-Path $HarmonyRoot "bin\Win64_Shipping_Client"
+if (-not (Test-Path -LiteralPath (Join-Path $harmonyBin "0Harmony.dll"))) {
+    throw "Missing Harmony library in selected HarmonyRoot: $HarmonyRoot"
+}
+$refFiles += Add-ManagedDlls $harmonyBin | Where-Object {
+    [IO.Path]::GetFileName($_) -notmatch "^(System|Microsoft)\."
 }
 
 $playerSettlementBin = Join-Path $PlayerSettlementRoot "bin\Win64_Shipping_Client"

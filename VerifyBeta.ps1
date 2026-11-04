@@ -1,9 +1,10 @@
 param(
     [string]$GameRoot = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord",
     [string]$PlayerSettlementRoot = "C:\Program Files (x86)\Steam\steamapps\workshop\content\261550\3720376888",
-    [string]$ExpectedBannerlordVersion = "1.5.2",
-    [string]$ExpectedWarSailsVersion = "1.3.2",
+    [string]$ExpectedBannerlordVersion = "1.5.6",
+    [string]$ExpectedWarSailsVersion = "1.3.6",
     [string]$ExpectedPlayerSettlementVersion = "7.5.0",
+    [string]$HarmonyRoot = "C:\Program Files (x86)\Steam\steamapps\common\Mount & Blade II Bannerlord\Modules\Bannerlord.Harmony",
     [string]$DeployRoot
 )
 
@@ -102,6 +103,14 @@ Assert-Equal "Player Settlement" $ExpectedPlayerSettlementVersion `
 [xml]$betaManifest = Get-Content -LiteralPath `
     (Join-Path $repo "Module\SubModule.xml") -Raw
 Assert-Equal "Beta module ID" $moduleId $betaManifest.Module.Id.value
+Assert-Equal "Save-facing launcher version" "v0.9.15" $betaManifest.Module.Version.value
+$harmonyDependency = $betaManifest.SelectSingleNode('/Module/DependedModules/DependedModule[@Id="Bannerlord.Harmony"]')
+$harmonyMetadata = $betaManifest.SelectSingleNode('/Module/DependedModuleMetadatas/DependedModuleMetadata[@id="Bannerlord.Harmony"]')
+if ($null -eq $harmonyDependency -or $null -eq $harmonyMetadata -or
+    $harmonyDependency.HasAttribute('DependentVersion') -or $harmonyMetadata.HasAttribute('version') -or
+    $harmonyMetadata.order -ne 'LoadBeforeThis') {
+    throw "Harmony must be required by identity and load order without a distribution-version pin"
+}
 Assert-Equal "Beta Native dependency" "v$ExpectedBannerlordVersion" `
     (($betaManifest.Module.DependedModules.DependedModule | Where-Object Id -eq "Native").DependentVersion)
 Assert-Equal "Beta War Sails dependency" "v$ExpectedWarSailsVersion" `
@@ -127,6 +136,7 @@ $script:ApiProbeDirectories = @(
     (Join-Path $GameRoot "Modules\SandBoxCore\bin\Win64_Shipping_Client"),
     (Join-Path $GameRoot "Modules\StoryMode\bin\Win64_Shipping_Client"),
     (Join-Path $GameRoot "Modules\NavalDLC\bin\Win64_Shipping_Client"),
+    (Join-Path $HarmonyRoot "bin\Win64_Shipping_Client"),
     (Join-Path $PlayerSettlementRoot "bin\Win64_Shipping_Client")
 )
 $resolver = [ResolveEventHandler] {
@@ -181,6 +191,12 @@ try {
         "TaleWorlds.CampaignSystem.Party.MobileParty" `
         "CancelNavigationTransitionParallel"
     Assert-BooleanProperty "TaleWorlds.CampaignSystem.Hero" "CanHaveFleet"
+    Assert-BooleanProperty "TaleWorlds.CampaignSystem.Settlements.Settlement" "IsVisible"
+    Assert-MethodSignature `
+        "TaleWorlds.CampaignSystem.GameState.MapState" `
+        "ProcessTravel" @("TaleWorlds.CampaignSystem.CampaignVec2")
+    Assert-MethodSignature "SandBox.View.Map.MapScreen" "HandleClickTimeChange" @("System.Boolean")
+    Assert-UniqueMethod "BannerlordPlayerSettlement.Behaviours.PlayerSettlementBehaviour" "get_SettlementCreatedEvent"
 
     $uniqueMethods = @(
         @("SandBox.MapScene", "Load"),
@@ -203,8 +219,7 @@ try {
     [AppDomain]::CurrentDomain.remove_AssemblyResolve($resolver)
 }
 
-$cecilPath = Join-Path $GameRoot `
-    "Modules\Bannerlord.Harmony\bin\Win64_Shipping_Client\Mono.Cecil.dll"
+$cecilPath = Join-Path $HarmonyRoot "bin\Win64_Shipping_Client\Mono.Cecil.dll"
 if (-not (Test-Path -LiteralPath $cecilPath)) {
     throw "Missing Mono.Cecil for binary inspection: $cecilPath"
 }
@@ -228,6 +243,26 @@ try {
     }
 
     Write-Output "Binary fleet policy reference: reflection-only"
+    $removedApiCalls = @(
+        $moduleAssembly.MainModule.Types |
+        ForEach-Object { $_.Methods } |
+        Where-Object { $_.HasBody } |
+        ForEach-Object { $_.Body.Instructions } |
+        Where-Object {
+            $_.Operand -is [Mono.Cecil.MethodReference] -and
+            (($_.Operand.DeclaringType.FullName -eq 'TaleWorlds.CampaignSystem.Settlements.Hideout' -and
+              $_.Operand.Name -match '^(get|set)_IsSpotted$') -or
+             ($_.Operand.DeclaringType.FullName -eq 'TaleWorlds.CampaignSystem.Party.MobileParty' -and
+              $_.Operand.Name -eq 'get_Objective'))
+        }
+    )
+    if ($removedApiCalls.Count -ne 0) { throw "Compiled binary references a removed discovery or party objective API" }
+    $assemblyVersion = $moduleAssembly.Name.Version.ToString()
+    Assert-Equal "Stable assembly identity" "0.9.21.0" $assemblyVersion
+    $fileVersionAttribute = $moduleAssembly.CustomAttributes | Where-Object { $_.AttributeType.FullName -eq 'System.Reflection.AssemblyFileVersionAttribute' }
+    $infoVersionAttribute = $moduleAssembly.CustomAttributes | Where-Object { $_.AttributeType.FullName -eq 'System.Reflection.AssemblyInformationalVersionAttribute' }
+    Assert-Equal "Binary file version" "0.9.24.0" $fileVersionAttribute.ConstructorArguments[0].Value
+    Assert-Equal "Beta release version" "0.9.24-beta.1" $infoVersionAttribute.ConstructorArguments[0].Value
 } finally {
     $moduleAssembly.Dispose()
 }
@@ -245,4 +280,4 @@ if (-not [string]::IsNullOrWhiteSpace($DeployRoot)) {
     Assert-Equal "Deployed binary SHA256" $sourceHash $deployedHash
 }
 
-Write-Output "Static beta verification passed. Campaign checks remain user-operated."
+Write-Output "Static beta verification passed. Campaign and Workshop-installed artifact checks remain mandatory."

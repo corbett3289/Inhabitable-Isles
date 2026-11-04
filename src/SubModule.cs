@@ -101,6 +101,7 @@ namespace BLWarsailsInhabitableIslands
                 }
             }
 
+            PlayerSettlementAiCompatibilityPatch.VerifyApplied(_harmony);
             Debug.Print(
                 "[BLWarsailsInhabitableIslands] " +
                 IslandCompatibility.GetStatus());

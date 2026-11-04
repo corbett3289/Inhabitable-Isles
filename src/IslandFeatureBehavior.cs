@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using BannerlordPlayerSettlement.Behaviours;
 using HarmonyLib;
 using Helpers;
 using TaleWorlds.CampaignSystem;
@@ -64,6 +65,20 @@ namespace BLWarsailsInhabitableIslands
         private bool _piratesEnabled = true;
         private int _schemaVersion = 3;
         private bool _initialized;
+        private PlayerSettlementBehaviour _settlementCreatedSource;
+        private bool _settlementCreationRepairFailed;
+
+        internal static string GetSettlementCreationRepairStatus()
+        {
+            if (_instance == null || _instance._settlementCreatedSource == null)
+            {
+                return "not attached (campaign not initialized)";
+            }
+
+            return _instance._settlementCreationRepairFailed
+                ? "attached; repair failure recorded"
+                : "attached to confirmed creation event";
+        }
 
         internal static bool IsManagedParty(MobileParty party)
         {
@@ -196,7 +211,7 @@ namespace BLWarsailsInhabitableIslands
                 result.Append(", infested=");
                 result.Append(hideout?.IsInfested == true);
                 result.Append(", spotted=");
-                result.Append(hideout?.IsSpotted == true);
+                result.Append(settlement?.IsVisible == true);
                 result.Append(", position=");
                 result.Append(positionValid ? "valid" : "invalid");
                 result.Append(", gate=");
@@ -231,6 +246,46 @@ namespace BLWarsailsInhabitableIslands
             CampaignEvents.OnHideoutDeactivatedEvent.AddNonSerializedListener(
                 this,
                 OnHideoutDeactivated);
+            AttachSettlementCreatedListener();
+        }
+
+        private void AttachSettlementCreatedListener()
+        {
+            PlayerSettlementBehaviour source = PlayerSettlementBehaviour.Instance;
+            if (source == null || ReferenceEquals(source, _settlementCreatedSource))
+            {
+                return;
+            }
+
+            PlayerSettlementBehaviour.SettlementCreatedEvent.AddNonSerializedListener(
+                this,
+                OnPlayerSettlementCreated);
+            _settlementCreatedSource = source;
+        }
+
+        private void OnPlayerSettlementCreated(Settlement settlement)
+        {
+            if (!IslandSettlementIntegration.IsPlayerSettlement(settlement) ||
+                !IslandSettlementIntegration.IsIslandSettlement(settlement, out _))
+            {
+                return;
+            }
+
+            try
+            {
+                IslandSettlementIntegration.RepairAll();
+                IslandTreeDecorator.RefreshSettlementClearings();
+                Debug.Print(
+                    "[BLWarsailsInhabitableIslands] Repaired confirmed island settlement " +
+                    settlement.StringId + " before Player Settlement save/reload.");
+            }
+            catch (Exception ex)
+            {
+                _settlementCreationRepairFailed = true;
+                Debug.Print(
+                    "[BLWarsailsInhabitableIslands] Confirmed settlement repair failed for " +
+                    settlement.StringId + ": " + ex);
+            }
         }
 
         public override void SyncData(IDataStore dataStore)
@@ -269,6 +324,7 @@ namespace BLWarsailsInhabitableIslands
 
         private void OnCampaignReady(CampaignGameStarter starter)
         {
+            AttachSettlementCreatedListener();
             LoggedNavigationRepairs.Clear();
             _initialized = false;
             IslandVillageLogistics.AttachTemporaryFerryLedger(
@@ -563,8 +619,7 @@ namespace BLWarsailsInhabitableIslands
 
         private static bool IsUsableHideoutPosition(CampaignVec2 position)
         {
-            return position != null &&
-                   position.IsValid() &&
+            return position.IsValid() &&
                    IslandNavMeshOverlay.IsImportedLandPosition(position) &&
                    IslandNavMeshOverlay.TryGetRaisedTerrainHeightAndNormal(
                        position.ToVec2(),
@@ -598,9 +653,8 @@ namespace BLWarsailsInhabitableIslands
                     continue;
                 }
 
-                if (hideout.IsSpotted)
+                if (settlement.IsVisible)
                 {
-                    settlement.IsVisible = true;
                     continue;
                 }
 
@@ -620,7 +674,6 @@ namespace BLWarsailsInhabitableIslands
                     continue;
                 }
 
-                hideout.IsSpotted = true;
                 settlement.IsVisible = true;
                 CampaignEventDispatcher.Instance.OnHideoutSpotted(
                     mainParty.Party,
@@ -826,7 +879,8 @@ namespace BLWarsailsInhabitableIslands
                 }
             }
 
-            settlement.IsVisible = settlement.Hideout.IsSpotted;
+            // In 1.5.6 visibility itself is the native saved discovery state.
+            // Retain it here; discovery sets it and dispatches the event once.
         }
 
         private void DeactivateInvalidHideouts()
@@ -1126,10 +1180,6 @@ namespace BLWarsailsInhabitableIslands
             if (!settlement.IsActive)
             {
                 settlement.IsVisible = false;
-            }
-            else if (settlement.Hideout?.IsSpotted == true)
-            {
-                settlement.IsVisible = true;
             }
         }
 

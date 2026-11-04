@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using BannerlordPlayerSettlement.Behaviours;
 using HarmonyLib;
 using SandBox.View.Map;
@@ -28,16 +29,37 @@ namespace BLWarsailsInhabitableIslands
     [HarmonyPatch(typeof(MapScreen), "HandleLeftMouseButtonClick")]
     internal static class PlayerSettlementMapClickPatch
     {
+        private static readonly MethodInfo HandleClickTimeChangeMethod =
+            ResolveClickTimeChangeMethod();
+
+        internal static bool SupportsNativeClickTimeControl =>
+            HandleClickTimeChangeMethod != null;
+
+        private static MethodInfo ResolveClickTimeChangeMethod()
+        {
+            MethodInfo method = AccessTools.Method(
+                typeof(MapScreen),
+                "HandleClickTimeChange",
+                new[] { typeof(bool) });
+            return method != null &&
+                   !method.IsStatic &&
+                   method.ReturnType == typeof(void)
+                ? method
+                : null;
+        }
+
         [HarmonyPriority(Priority.First)]
         private static bool Prefix(
+            MapScreen __instance,
             MapEntityVisual visualOfSelectedEntity,
-            ref CampaignVec2 intersectionPoint)
+            ref CampaignVec2 intersectionPoint,
+            bool isDoubleClick)
         {
             PlayerSettlementBehaviour instance = PlayerSettlementBehaviour.Instance;
             if (instance != null &&
                 (instance.IsPlacingSettlement || instance.IsPlacingGate))
             {
-                if (intersectionPoint == null)
+                if (!intersectionPoint.ToVec2().IsValid)
                 {
                     return true;
                 }
@@ -59,10 +81,28 @@ namespace BLWarsailsInhabitableIslands
                 return true;
             }
 
+            // Native HandleMouse dispatches MapParleyModifier clicks separately
+            // before this method. Preserve that hotkey (and custom bindings),
+            // follow clicks, and Ctrl+click cheats if another caller gets here.
+            if (!SupportsNativeClickTimeControl ||
+                __instance == null ||
+                __instance.SceneLayer?.Input == null ||
+                __instance.MapState == null ||
+                __instance.MapState.AtMenu ||
+                __instance.MapCameraView == null ||
+                !__instance.MapCameraView.ProcessCameraInput ||
+                __instance.Input.IsControlDown() ||
+                __instance.SceneLayer.Input.IsHotKeyDown("MapParleyModifier") ||
+                __instance.SceneLayer.Input.IsHotKeyDown("MapFollowModifier"))
+            {
+                return true;
+            }
+
             Settlement settlement = settlementVisual.MapEntity?.Settlement;
             MobileParty mainParty = MobileParty.MainParty;
             if (settlement == null ||
                 mainParty == null ||
+                mainParty.MapEvent != null ||
                 mainParty.IsTransitionInProgress ||
                 !mainParty.HasNavalNavigationCapability ||
                 !settlement.HasPort ||
@@ -85,16 +125,28 @@ namespace BLWarsailsInhabitableIslands
                 return true;
             }
 
-            mainParty.SetMoveGoToSettlement(
-                settlement,
-                mainParty.IsCurrentlyAtSea
-                    ? MobileParty.NavigationType.Naval
-                    : MobileParty.NavigationType.All,
-                true);
-            Debug.Print(
-                "[BLWarsailsInhabitableIslands] Routed remote map click through port for " +
-                settlement.StringId + ".");
-            return false;
+            try
+            {
+                mainParty.SetMoveGoToSettlement(
+                    settlement,
+                    mainParty.IsCurrentlyAtSea
+                        ? MobileParty.NavigationType.Naval
+                        : MobileParty.NavigationType.All,
+                    true);
+                mainParty.ForceAiNoPathMode = false;
+                HandleClickTimeChangeMethod.Invoke(__instance, new object[] { isDoubleClick });
+                Debug.Print(
+                    "[BLWarsailsInhabitableIslands] Routed remote map click through port for " +
+                    settlement.StringId + ".");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print(
+                    "[BLWarsailsInhabitableIslands] Remote settlement click failed; " +
+                    "using native click handling: " + ex);
+                return true;
+            }
         }
     }
 }

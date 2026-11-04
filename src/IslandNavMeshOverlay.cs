@@ -269,8 +269,7 @@ namespace BLWarsailsInhabitableIslands
 
         internal static bool IsImportedLandPosition(CampaignVec2 position)
         {
-            if (position == null ||
-                Campaign.Current == null ||
+            if (Campaign.Current == null ||
                 Campaign.Current.MapSceneWrapper == null)
             {
                 return false;
@@ -285,7 +284,7 @@ namespace BLWarsailsInhabitableIslands
 
         internal static bool TryGetIsland(CampaignVec2 position, out IslandRecord island)
         {
-            if (position == null)
+            if (!position.ToVec2().IsValid)
             {
                 island = null;
                 return false;
@@ -406,7 +405,7 @@ namespace BLWarsailsInhabitableIslands
             out CampaignVec2 landEntry)
         {
             IslandSurface surface;
-            if (landTarget == null ||
+            if (!landTarget.ToVec2().IsValid ||
                 !TryGetSurface(landTarget.ToVec2(), out surface))
             {
                 seaApproach = CampaignVec2.Invalid;
@@ -448,8 +447,8 @@ namespace BLWarsailsInhabitableIslands
             out CampaignVec2 seaApproach)
         {
             IslandSurface surface;
-            if (currentLandPosition == null ||
-                finalSeaTarget == null ||
+            if (!currentLandPosition.ToVec2().IsValid ||
+                !finalSeaTarget.ToVec2().IsValid ||
                 !TryGetSurface(currentLandPosition.ToVec2(), out surface))
             {
                 landExit = CampaignVec2.Invalid;

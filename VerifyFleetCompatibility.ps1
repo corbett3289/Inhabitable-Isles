@@ -114,7 +114,7 @@ namespace BLWarsailsInhabitableIslands
                 ApplicationVersionType.Release,
                 1,
                 5,
-                2,
+                6,
                 999999);
             var legacy = new ApplicationVersion(
                 ApplicationVersionType.Release,
@@ -126,12 +126,12 @@ namespace BLWarsailsInhabitableIslands
                 ApplicationVersionType.Invalid,
                 1,
                 5,
-                2,
+                6,
                 0);
 
-            if (!ModuleVersionRules.Matches(supported, 1, 5, 2) ||
+            if (!ModuleVersionRules.Matches(supported, 1, 5, 6) ||
                 !ModuleVersionRules.IsAtLeast(supported, 1, 5, 0) ||
-                ModuleVersionRules.Matches(legacy, 1, 5, 2) ||
+                ModuleVersionRules.Matches(legacy, 1, 5, 6) ||
                 ModuleVersionRules.IsAtLeast(legacy, 1, 5, 0) ||
                 ModuleVersionRules.IsKnown(null) ||
                 ModuleVersionRules.IsKnown(invalid) ||

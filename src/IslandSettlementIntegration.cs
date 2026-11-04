@@ -73,7 +73,6 @@ namespace BLWarsailsInhabitableIslands
             }
 
             if (!settlement.HasPort ||
-                settlement.PortPosition == null ||
                 !settlement.PortPosition.IsValid() ||
                 DistanceSquared(settlement.PortPosition.ToVec2(), seaPosition.ToVec2()) > 0.25f)
             {
@@ -184,7 +183,7 @@ namespace BLWarsailsInhabitableIslands
             Settlement settlement,
             IslandRecord island)
         {
-            if (settlement?.GatePosition != null &&
+            if (settlement != null &&
                 settlement.GatePosition.IsValid() &&
                 DistanceSquared(
                     settlement.GatePosition.ToVec2(),
@@ -193,7 +192,7 @@ namespace BLWarsailsInhabitableIslands
                 return settlement.GatePosition.ToVec2();
             }
 
-            if (settlement?.Position != null &&
+            if (settlement != null &&
                 settlement.Position.IsValid() &&
                 DistanceSquared(
                     settlement.Position.ToVec2(),
@@ -202,7 +201,7 @@ namespace BLWarsailsInhabitableIslands
                 return settlement.Position.ToVec2();
             }
 
-            if (settlement?.PortPosition != null &&
+            if (settlement != null &&
                 settlement.PortPosition.IsValid())
             {
                 return settlement.PortPosition.ToVec2();

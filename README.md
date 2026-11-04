@@ -1,10 +1,20 @@
-# Inhabitable Isles - War Sails & Player Settlement
+# Inhabitable Isles - Bannerlord 1.5.6 Beta
 
-Compatibility and campaign expansion mod for Mount & Blade II: Bannerlord War Sails and Player Settlement.
+Public-beta compatibility and campaign expansion mod for Bannerlord **1.5.6**, War Sails **1.3.6**, and Player Settlement **7.5.0**. This branch is separate from the preserved 1.5.2 and deprecated 1.4.8 releases. Subscribe to and enable only one Isles variant: they share the same module identity.
 
-[Current Steam Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102) | [Deprecated 1.4.8 Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3799429144) | [Source](https://github.com/corbett3289/Inhabitable-Isles) | [Bannerlord 1.4.8 source](https://github.com/corbett3289/Inhabitable-Isles/tree/bannerlord-1.4.8)
+[Preserved 1.5.2 Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102) | [Deprecated 1.4.8 Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3799429144) | [Beta source](https://github.com/corbett3289/Inhabitable-Isles/tree/bannerlord-1.5.6-beta)
 
-Current release candidate: v0.9.23 for Bannerlord v1.5.2 and War Sails v1.3.2. The launcher compatibility version intentionally remains v0.9.15 so existing saves do not enter Bannerlord's unreliable module-version mismatch flow.
+[1.5.6 candidate Workshop item](https://steamcommunity.com/sharedfiles/filedetails/?id=3833378968) is currently **private**, pending the campaign acceptance gates in [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md).
+
+Current release candidate: **v0.9.24-beta.1**. The launcher compatibility version intentionally remains **v0.9.15**; assembly identity remains **0.9.21.0** and file version is **0.9.24.0**. Back up saves and test copies when changing the game branch. There is no save-schema change, but compatibility with an individual campaign is not guaranteed.
+
+This beta replaces the removed hideout discovery API with native settlement visibility, handles raw island clicks before native dead-zone rewriting, normalizes island land destinations, preserves native click time controls and Ctrl+Click parley, and repairs confirmed Player Settlement creation before its automatic save/reload. The creation event runs after native production initialization; this is not a claim to fix every reported construction crash.
+
+Player Settlement Fixes 1.0.0 still contains a removed party-objective API. A narrowly version- and binary-gated Isles transpiler redirects one AI-scoring helper call while preserving the remaining eligibility rules and scoring code. It does not alter or redistribute the dependency DLL. `blwii.compat` reports whether the shim is active or blocked; an unknown dependency binary is a release blocker.
+
+Use one compatible Harmony installation (tested distribution **2.4.2.248**, core assembly **2.4.2.0**) and Player Settlement's required ButterLib, UIExtenderEx, and MCM dependencies. The manifest requires Harmony by identity and load order without pinning its distribution build suffix. Tested dependency versions are ButterLib **2.12.0**, UIExtenderEx **3.0.3**, MCM **5.12.3**, and Player Settlement **7.5.0**.
+
+## Historical release notes
 
 v0.9.23 removes the direct dependency on Bannerlord 1.5's `Hero.CanHaveFleet` getter that caused an hourly villager crash when a mismatched 1.4.8 installation loaded the newer DLL. Fleet policy is now resolved through a validated optional accessor, runtime versions come from Bannerlord module metadata instead of uninformative DLL versions, and `blwii.compat` reports runtime support plus fleet-policy availability. Unsupported or unknown game/DLC combinations receive one campaign warning. Official support remains Bannerlord 1.5.2 with War Sails 1.3.2.
 
@@ -46,14 +56,15 @@ This is a separate module and does not edit Player Settlement's files.
 
 ## Version branches
 
-- `main` is the active v0.9.23 line for Bannerlord 1.5.2 and War Sails 1.3.2.
+- `bannerlord-1.5.6-beta` is the v0.9.24-beta.1 line for Bannerlord 1.5.6 and War Sails 1.3.6.
+- `main` preserves v0.9.23 for Bannerlord 1.5.2 and War Sails 1.3.2.
 - `bannerlord-1.4.8` preserves the historical v0.9.21 source for Bannerlord 1.4.8 and War Sails 1.2.8. Its [standalone Workshop package](https://steamcommunity.com/sharedfiles/filedetails/?id=3799429144) is deprecated, frozen, and unsupported.
 
-The module manifest intentionally remains at launcher version v0.9.15 for save compatibility. The current DLL file and informational versions are v0.9.23; the assembly identity remains v0.9.21.0.
+The module manifest intentionally remains at launcher version v0.9.15 for save compatibility. The beta file version is v0.9.24.0 and informational version is v0.9.24-beta.1; the assembly identity remains v0.9.21.0.
 
 ## Installation
 
-The supported player installation is the [current Steam Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102). Enable War Sails, Harmony, Player Settlement, and then Inhabitable Isles in that order. Back up an existing save before changing game, DLC, or mod versions. Do not subscribe to or enable both the current and legacy Workshop items; they use the same module identity and target different game APIs.
+Use the separate 1.5.6 beta Workshop item for this branch; the linked older items are alternatives for their exact game versions. Load Harmony first, then the official modules/War Sails, Player Settlement's other dependencies, Player Settlement, and this beta. Disable outdated achievement-enabler mods (including Enable Achievement 0.0.2) when reporting crashes. Back up an existing save before changing versions. Do not subscribe to or enable multiple Isles Workshop variants.
 
 This repository contains source and module data. Generated DLL and PDB files are deliberately not committed.
 
@@ -61,7 +72,7 @@ This repository contains source and module data. Generated DLL and PDB files are
 
 The default build expects:
 
-- Bannerlord 1.5.2 and War Sails 1.3.2 in the standard Steam location.
+- Bannerlord 1.5.6 and War Sails 1.3.6 in the standard Steam location.
 - Player Settlement 7.5.0 in its standard Workshop location.
 - .NET Framework 4.7.1 reference assemblies.
 - The Visual Studio 2022 Community Roslyn C# compiler in its default location.
@@ -74,7 +85,7 @@ From PowerShell, run:
 .\VerifyBeta.ps1
 ```
 
-`BuildLocal.ps1` accepts `-GameRoot` and `-PlayerSettlementRoot` when those dependencies are installed elsewhere. It writes the compiled module to `Module\bin\Win64_Shipping_Client`. Local deployment requires both `-Deploy` and an explicit `-DeployRoot`; the script never selects a Workshop destination automatically.
+`BuildLocal.ps1` accepts `-GameRoot`, `-PlayerSettlementRoot`, and `-HarmonyRoot` when dependencies are installed elsewhere. Pass the same `-HarmonyRoot` to `VerifyBeta.ps1`. It writes the compiled module to `Module\bin\Win64_Shipping_Client`. Local deployment requires both `-Deploy` and an explicit `-DeployRoot`; the script never selects a Workshop destination automatically. Do not use `-AllowVersionMismatch` for a release build.
 
 ## Reporting issues
 

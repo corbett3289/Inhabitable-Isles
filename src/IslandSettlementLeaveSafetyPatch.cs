@@ -47,7 +47,7 @@ namespace BLWarsailsInhabitableIslands
                 CampaignVec2 exitPosition = ResolveExitPosition(
                     settlement,
                     mainParty.Position);
-                if (exitPosition != null && exitPosition.IsValid())
+                if (exitPosition.IsValid())
                 {
                     mainParty.Position = exitPosition;
                     foreach (MobileParty attachedParty in mainParty.AttachedParties)
@@ -99,8 +99,7 @@ namespace BLWarsailsInhabitableIslands
             Settlement settlement,
             CampaignVec2 currentPosition)
         {
-            if (settlement.GatePosition != null &&
-                settlement.GatePosition.IsValid())
+            if (settlement.GatePosition.IsValid())
             {
                 return settlement.GatePosition;
             }

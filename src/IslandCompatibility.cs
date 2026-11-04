@@ -12,9 +12,9 @@ namespace BLWarsailsInhabitableIslands
 {
     internal static class IslandCompatibility
     {
-        internal const string ReleaseVersion = "0.9.23";
-        internal const string TargetBannerlordVersion = "1.5.2";
-        internal const string TargetWarSailsVersion = "1.3.2";
+        internal const string ReleaseVersion = "0.9.24-beta.1";
+        internal const string TargetBannerlordVersion = "1.5.6";
+        internal const string TargetWarSailsVersion = "1.3.6";
         internal const string TargetPlayerSettlementVersion = "7.5.0";
 
         private static readonly List<string> FailedPatchTypes =
@@ -126,6 +126,11 @@ namespace BLWarsailsInhabitableIslands
                 return true;
             }
 
+            if (patchType == typeof(PlayerSettlementAiCompatibilityPatch))
+            {
+                return PlayerSettlementAiCompatibilityPatch.ShouldApply(out reason);
+            }
+
             if (patchType == typeof(IslandSailingSoundTickPatch) ||
                 patchType == typeof(IslandHideNavalVisualAudioPatch))
             {
@@ -158,8 +163,8 @@ namespace BLWarsailsInhabitableIslands
         internal static string RuntimeCompatibility =>
             !RuntimeVersionsKnown
                 ? "unknown"
-                : ModuleVersionRules.Matches(_runtimeBannerlordVersion, 1, 5, 2) &&
-                  ModuleVersionRules.Matches(_runtimeWarSailsVersion, 1, 3, 2)
+                : ModuleVersionRules.Matches(_runtimeBannerlordVersion, 1, 5, 6) &&
+                  ModuleVersionRules.Matches(_runtimeWarSailsVersion, 1, 3, 6)
                     ? "supported"
                     : "unsupported";
 
@@ -205,7 +210,8 @@ namespace BLWarsailsInhabitableIslands
                 "patches applied {11}/{12}; skipped patches: {13}; failed " +
                 "patches: {14}; imported island surfaces: {15}; transitions: " +
                 "{16}; temporary ferries: {17}; trees: {18} ({19} active); " +
-                "version resolution: {20}.",
+                "version resolution: {20}; Player Settlement AI: {21}; " +
+                "settlement creation repair: {22}.",
                 ReleaseVersion,
                 TargetBannerlordVersion,
                 TargetWarSailsVersion,
@@ -226,7 +232,9 @@ namespace BLWarsailsInhabitableIslands
                 IslandVillageLogistics.GetTrackedFerryCount(),
                 IslandTreeDecorator.IsEnabled ? "enabled" : "disabled",
                 IslandTreeDecorator.InstanceCount,
-                _versionResolutionIssue ?? "none");
+                _versionResolutionIssue ?? "none",
+                PlayerSettlementAiCompatibilityPatch.Status,
+                IslandFeatureBehavior.GetSettlementCreationRepairStatus());
         }
 
         private static ApplicationVersion? ResolveModuleVersion(

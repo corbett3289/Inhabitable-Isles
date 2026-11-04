@@ -7,6 +7,7 @@ using Helpers;
 using NavalDLC.GameComponents;
 using TaleWorlds.CampaignSystem;
 using TaleWorlds.CampaignSystem.Actions;
+using TaleWorlds.CampaignSystem.GameState;
 using TaleWorlds.CampaignSystem.Party;
 using TaleWorlds.CampaignSystem.Settlements;
 using TaleWorlds.Library;
@@ -48,6 +49,31 @@ namespace BLWarsailsInhabitableIslands
         internal static bool SupportsAnimatedTransitions =>
             InitializeNavigationTransitionMethod != null;
 
+        internal static bool IsIssuingNativeMove => _bypassMovePatch;
+
+        internal static bool TryNormalizeImportedLandTarget(
+            CampaignVec2 point,
+            out CampaignVec2 landPoint)
+        {
+            landPoint = CampaignVec2.Invalid;
+            if (!IsCampaignMapReady() ||
+                !point.ToVec2().IsValid ||
+                !IslandNavMeshOverlay.TryGetIsland(point.ToVec2(), out IslandRecord _))
+            {
+                return false;
+            }
+
+            if (IslandNavMeshOverlay.IsImportedLandPosition(point))
+            {
+                landPoint = point;
+                return true;
+            }
+
+            return IslandNavMeshOverlay.TryCreateLandPosition(
+                point.ToVec2(),
+                out landPoint);
+        }
+
         internal static bool TryHandleMove(
             MobileParty mobileParty,
             CampaignVec2 point,
@@ -61,15 +87,27 @@ namespace BLWarsailsInhabitableIslands
                 mobileParty == null ||
                 !IsCampaignMapReady() ||
                 mobileParty.AttachedTo != null ||
-                mobileParty.IsTransitionInProgress ||
-                !IsValidPosition(point))
+                mobileParty.IsTransitionInProgress)
+            {
+                return false;
+            }
+
+            bool targetsImportedLand = TryNormalizeImportedLandTarget(
+                point,
+                out CampaignVec2 landTarget);
+            if (targetsImportedLand)
+            {
+                point = landTarget;
+                navigationType = MobileParty.NavigationType.Default;
+            }
+
+            if (!IsValidPosition(point))
             {
                 return false;
             }
 
             IslandRecord currentIsland = null;
             IslandRecord targetIsland = null;
-            CampaignVec2 resolvedTarget = point;
             bool currentSettlementOnIsland =
                 !mobileParty.IsCurrentlyAtSea &&
                 mobileParty.CurrentSettlement != null &&
@@ -83,20 +121,18 @@ namespace BLWarsailsInhabitableIslands
                      mobileParty.Position,
                      out currentIsland));
             bool targetsIsland =
-                IslandNavMeshOverlay.TryGetIsland(point, out targetIsland) &&
-                (IslandNavMeshOverlay.IsImportedLandPosition(point) ||
-                 IslandNavMeshOverlay.TryCreateLandPosition(
-                     point.ToVec2(),
-                     out resolvedTarget));
-            if (targetsIsland &&
-                !IslandNavMeshOverlay.IsImportedLandPosition(point))
-            {
-                point = resolvedTarget;
-            }
+                targetsImportedLand &&
+                IslandNavMeshOverlay.TryGetIsland(point, out targetIsland);
 
             if (startsOnIsland && targetsIsland && currentIsland.Id == targetIsland.Id)
             {
                 ActiveTravel.Remove(mobileParty);
+                if (finalBehavior == AiBehavior.GoToPoint)
+                {
+                    ExecuteMove(mobileParty, point, MobileParty.NavigationType.Default);
+                    return true;
+                }
+
                 return false;
             }
 
@@ -279,7 +315,6 @@ namespace BLWarsailsInhabitableIslands
                     navigationType = MobileParty.NavigationType.All;
                     isTargetingPort =
                         targetSettlement.HasPort &&
-                        targetSettlement.PortPosition != null &&
                         targetSettlement.PortPosition.IsValid();
                 }
 
@@ -606,7 +641,6 @@ namespace BLWarsailsInhabitableIslands
                 Vec2 delta = candidate.Position.ToVec2() - source;
                 float distanceSquared = delta.LengthSquared;
                 if (candidate.HasPort &&
-                    candidate.PortPosition != null &&
                     candidate.PortPosition.IsValid() &&
                     distanceSquared < nearestPortDistanceSquared)
                 {
@@ -634,7 +668,6 @@ namespace BLWarsailsInhabitableIslands
                 candidate == currentSettlement ||
                 !candidate.IsActive ||
                 !candidate.IsTown ||
-                candidate.GatePosition == null ||
                 !candidate.GatePosition.IsValid())
             {
                 return false;
@@ -922,7 +955,7 @@ namespace BLWarsailsInhabitableIslands
 
         private static float DistanceSquared(CampaignVec2 left, CampaignVec2 right)
         {
-            if (left == null || right == null)
+            if (!left.ToVec2().IsValid || !right.ToVec2().IsValid)
             {
                 return float.MaxValue;
             }
@@ -1247,8 +1280,7 @@ namespace BLWarsailsInhabitableIslands
 
         private static bool IsValidPosition(CampaignVec2 position)
         {
-            return position != null &&
-                   position.ToVec2().IsValid &&
+            return position.ToVec2().IsValid &&
                    IsCampaignMapReady() &&
                    position.IsValid();
         }
@@ -1306,6 +1338,48 @@ namespace BLWarsailsInhabitableIslands
         }
     }
 
+    [HarmonyPatch(typeof(MapState), "ProcessTravel", new[] { typeof(CampaignVec2) })]
+    internal static class IslandRawMapTravelPatch
+    {
+        [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
+        private static bool Prefix(MapState __instance, ref CampaignVec2 moveTargetPoint)
+        {
+            MobileParty mainParty = MobileParty.MainParty;
+            if (__instance == null ||
+                __instance.AtMenu ||
+                mainParty == null ||
+                mainParty.MapEvent != null ||
+                mainParty.IsInNavalAutoTravel ||
+                !IslandTravelController.TryNormalizeImportedLandTarget(
+                    moveTargetPoint,
+                    out CampaignVec2 landTarget))
+            {
+                return true;
+            }
+
+            // Native ProcessTravel rewrites dead-zone clicks before issuing the
+            // movement command, so imported land is handled at this boundary.
+            moveTargetPoint = landTarget;
+            try
+            {
+                mainParty.ForceAiNoPathMode = false;
+                bool handled = IslandTravelController.TryHandleMove(
+                    mainParty,
+                    landTarget,
+                    MobileParty.NavigationType.Default,
+                    AiBehavior.GoToPoint);
+                return !handled;
+            }
+            catch (Exception ex)
+            {
+                Debug.Print(
+                    "[BLWarsailsInhabitableIslands] Raw island map travel failed: " + ex);
+                return true;
+            }
+        }
+    }
+
     [HarmonyPatch(
         typeof(NavalPartyNavigationModel),
         nameof(NavalPartyNavigationModel.CanPlayerNavigateToPosition))]
@@ -1317,14 +1391,8 @@ namespace BLWarsailsInhabitableIslands
             ref MobileParty.NavigationType navigationType,
             ref bool __result)
         {
-            if (__result)
-            {
-                return;
-            }
-
             MobileParty mainParty = MobileParty.MainParty;
             if (mainParty == null ||
-                vec2 == null ||
                 Campaign.Current == null ||
                 Campaign.Current.MapSceneWrapper == null)
             {
@@ -1332,9 +1400,8 @@ namespace BLWarsailsInhabitableIslands
             }
 
             bool targetsImportedIsland =
-                IslandNavMeshOverlay.IsImportedLandPosition(vec2) ||
-                IslandNavMeshOverlay.TryCreateLandPosition(
-                    vec2.ToVec2(),
+                IslandTravelController.TryNormalizeImportedLandTarget(
+                    vec2,
                     out CampaignVec2 _);
             if (targetsImportedIsland &&
                 (mainParty.IsCurrentlyAtSea ||
@@ -1342,6 +1409,11 @@ namespace BLWarsailsInhabitableIslands
             {
                 navigationType = MobileParty.NavigationType.Default;
                 __result = true;
+                return;
+            }
+
+            if (__result)
+            {
                 return;
             }
 
@@ -1365,11 +1437,24 @@ namespace BLWarsailsInhabitableIslands
         [HarmonyPrefix]
         private static bool Prefix(
             MobileParty __instance,
-            CampaignVec2 point,
-            MobileParty.NavigationType navigationType)
+            ref CampaignVec2 point,
+            ref MobileParty.NavigationType navigationType)
         {
             try
             {
+                if (IslandTravelController.IsIssuingNativeMove)
+                {
+                    return true;
+                }
+
+                if (IslandTravelController.TryNormalizeImportedLandTarget(
+                        point,
+                        out CampaignVec2 landTarget))
+                {
+                    point = landTarget;
+                    navigationType = MobileParty.NavigationType.Default;
+                }
+
                 return !IslandTravelController.TryHandleMove(
                     __instance,
                     point,
@@ -1418,6 +1503,10 @@ namespace BLWarsailsInhabitableIslands
                     navigationType = __instance.IsCurrentlyAtSea
                         ? MobileParty.NavigationType.Naval
                         : MobileParty.NavigationType.All;
+                }
+                else
+                {
+                    navigationType = MobileParty.NavigationType.Default;
                 }
             }
 
