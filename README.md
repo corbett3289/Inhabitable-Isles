@@ -4,7 +4,7 @@ Public-beta compatibility and campaign expansion mod for Bannerlord **1.5.6**, W
 
 [Preserved 1.5.2 Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3767263102) | [Deprecated 1.4.8 Workshop release](https://steamcommunity.com/sharedfiles/filedetails/?id=3799429144) | [Beta source](https://github.com/corbett3289/Inhabitable-Isles/tree/bannerlord-1.5.6-beta)
 
-[1.5.6 candidate Workshop item](https://steamcommunity.com/sharedfiles/filedetails/?id=3833378968) is currently **private**, pending the campaign acceptance gates in [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md).
+[1.5.6 beta Workshop item](https://steamcommunity.com/sharedfiles/filedetails/?id=3833378968). Exact-version build/static checks, downloaded-artifact hashes, required patch registration, and a new Sandbox initialization passed. The full sailing, construction, siege, campaign-soak and existing-save matrix remains uncompleted; the maintainer elected to release the public beta at this stage. See [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md) for the evidence and remaining checks.
 
 Current release candidate: **v0.9.24-beta.1**. The launcher compatibility version intentionally remains **v0.9.15**; assembly identity remains **0.9.21.0** and file version is **0.9.24.0**. Back up saves and test copies when changing the game branch. There is no save-schema change, but compatibility with an individual campaign is not guaranteed.
 
