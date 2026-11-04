@@ -6,7 +6,7 @@ Public-beta compatibility and campaign expansion mod for Bannerlord **1.5.6**, W
 
 [1.5.6 beta Workshop item](https://steamcommunity.com/sharedfiles/filedetails/?id=3833378968). Exact-version build/static checks, downloaded-artifact hashes, required patch registration, and a new Sandbox initialization passed. The full sailing, construction, siege, campaign-soak and existing-save matrix remains uncompleted; the maintainer elected to release the public beta at this stage. See [RELEASE_VALIDATION.md](RELEASE_VALIDATION.md) for the evidence and remaining checks.
 
-Current release candidate: **v0.9.24-beta.1**. The launcher compatibility version intentionally remains **v0.9.15**; assembly identity remains **0.9.21.0** and file version is **0.9.24.0**. Back up saves and test copies when changing the game branch. There is no save-schema change, but compatibility with an individual campaign is not guaranteed.
+Current public beta: **v0.9.24-beta.1**. The launcher compatibility version intentionally remains **v0.9.15**; assembly identity remains **0.9.21.0** and file version is **0.9.24.0**. Back up saves and test copies when changing the game branch. There is no save-schema change, but compatibility with an individual campaign is not guaranteed.
 
 This beta replaces the removed hideout discovery API with native settlement visibility, handles raw island clicks before native dead-zone rewriting, normalizes island land destinations, preserves native click time controls and Ctrl+Click parley, and repairs confirmed Player Settlement creation before its automatic save/reload. The creation event runs after native production initialization; this is not a claim to fix every reported construction crash.
 

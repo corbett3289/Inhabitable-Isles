@@ -1,6 +1,6 @@
 # Inhabitable Isles 1.5.6 Beta Release Test Matrix
 
-This release targets exactly Bannerlord 1.5.6, War Sails 1.3.6, and Player Settlement 7.5.0. Initial verified Steam build: 26242440. The separate Workshop candidate remains private until the campaign and downloaded-artifact gates pass. Unperformed checks are not passes.
+This release targets exactly Bannerlord 1.5.6, War Sails 1.3.6, and Player Settlement 7.5.0. Initial verified Steam build: 26242440. This is the intended regression matrix. For the first public beta the maintainer elected publication after build/static checks, downloaded-artifact verification, and new Sandbox initialization; remaining checks are recorded in RELEASE_VALIDATION.md. Unperformed checks are not passes.
 
 ## Static Gate
 
@@ -38,7 +38,7 @@ This release targets exactly Bannerlord 1.5.6, War Sails 1.3.6, and Player Settl
 1. Package only the manifest, ModuleData, DLL, and PDB. Do not include Harmony/Player Settlement binaries, logs, saves, or local uploader tasks.
 2. Create the new 1.5.6 item privately and add Harmony/Player Settlement required-item links. Download it, verify every file hash, and repeat critical landing, creation, AI, and save/reload checks using the downloaded artifact.
 3. Run several in-game days; require no unhandled exceptions, missing-method errors, stuck parties, or transition loops. A main-menu launch alone is insufficient.
-4. Flip the new item public only after all gates pass; tag v0.9.24-beta.1 and cross-link the three versions without changing older content packages. Verify downloaded hashes, public visibility, exact requirements, and required-item links again.
+4. Before publication, complete the matrix or explicitly document the maintainer's decision to release an open beta with outstanding checks; never mark unperformed checks passed. Tag v0.9.24-beta.1 and cross-link the versions without changing older content packages. Verify downloaded hashes, public visibility, exact requirements, and required-item links again.
 
 ## Logs
 

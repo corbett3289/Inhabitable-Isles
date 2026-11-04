@@ -14,6 +14,7 @@ Release: Workshop item [3833378968](https://steamcommunity.com/sharedfiles/filed
 - A direct prefix on the broken helper was proven unusable because Harmony resolves the missing token while reading it. The shipped shim instead replaces exactly one verified call in the caller, retaining its other instructions and all remaining eligibility filters.
 - Created the candidate privately; linked Harmony 2859188632 and Player Settlement 3720376888 as required Workshop items.
 - Downloaded the private item through Steam and verified all five payload hashes against the staged package.
+- After publication, verified public visibility and required-item links, downloaded the public artifact, and rechecked all payload hashes. Both older descriptions link the beta; their content packages and titles are preserved.
 - Launched the downloaded artifact through standard Bannerlord.exe: runtime versions supported, 27/29 patches applied, two intentional native-audio skips, no patch failures, and the AI caller redirect active.
 - User started a new Sandbox campaign and ran blwii.compat. A supplied photo confirms the beta version/target; the engine log confirms NavalMapScreen loaded, island features initialized, and all 22 island surfaces imported. No full gameplay-regression result is inferred from that initialization.
 - Stable identity: module BLWarsailsInhabitableIslands, launcher v0.9.15, assembly 0.9.21.0. File version 0.9.24.0; informational version 0.9.24-beta.1. Save schema unchanged.
